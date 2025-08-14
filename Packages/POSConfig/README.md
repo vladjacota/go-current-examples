@@ -16,7 +16,7 @@ PS> .\Packages\POSConfig\NewPosConfigPackage.ps1 -OutputDir .\out -Import -Serve
 Parameters:
 - Path: payload root (defaults to `Packages/POSConfig/POSConfig/*`)
 - OutputDir: where to place the built package
-- Id, Name: optional metadata
+- Id, Name, Version: optional metadata (Version defaults to timestamp)
 - Import, Server, Force: manage import to Update Service
 
 ## Install on target
@@ -24,11 +24,29 @@ Parameters:
 Use Update Service Client to install on a computer:
 
 ```powershell
-Install-UscPackage -Id 'pos-config' -Version '*' -Instance 'BCInstance' -Arguments @{ StoreNumber = '1001'; POSID = 'POS01' }
+Install-UscPackage -Id 'pos-config' -Version '*' -Instance 'BCInstance' -Arguments @{
+	StoreNumber = '1001'
+	POSID = 'POS01'
+	Company = 'CRONUS International Ltd.'
+	POSUserName = 'POS'
+	POSUserPassword = 'ChangeMe!42'
+	POSAdminUserName = 'POSADMIN'
+	POSAdminPassword = 'Stronger!Passw0rd'
+	POSPermissionSetId = 'SUPER (DATA)'
+	POSPermissionSetAppName = 'System Application'
+	POSPermissionSetAppPublisher = 'Microsoft'
+	POSAdminPermissionSetId = 'SUPER'
+	CodeunitId = 50101
+	MethodName = 'SetupPOSEnvironment'
+}
 ```
 
 What it does:
-- Imports BC management modules for the target instance.
-- Creates users `POS` and `POSADMIN` if missing, assigns permissions.
-- Invokes codeunit 50101 `SetupPOSEnvironment` with `StoreNumber|POSID`.
+- Imports BC management modules for the target instance (depends on `bc-web-client`).
+- Creates users (defaults `POS`/`POSADMIN`) if missing, assigns permissions (defaults `SUPER (DATA)`/`SUPER`).
+- Invokes the specified codeunit (defaults 50101/SetupPOSEnvironment) with `StoreNumber|POSID`.
 - Runs any payload scripts in the package with `-StoreNumber` and `-POSID`.
+
+Notes:
+- Passwords can be provided via arguments; if omitted, secure random passwords are generated.
+- Make sure the host has BC management modules available (provided via dependency) and LsSetupHelper if you rely on SQL helpers.

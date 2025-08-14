@@ -19,13 +19,14 @@ $pkg = @{
         (Join-Path $PSScriptRoot '*')
     )
     OutputDir = $OutputDir
-    Commands = @{
-        Install = 'Package.psm1:Install-Package'
-    }
+    Commands = @{ Install = 'Package.psm1:Install-Package' }
     Parameters = @(
         @{ Key = 'Company'; Description = 'Company name to import into'; Default = 'CRONUS International Ltd.' }
         @{ Key = 'Overwrite'; Description = 'Overwrite existing data when importing'; Widget = 'Checkbox'; Default = 'true' }
         @{ Key = 'ApplyAfterImport'; Description = 'Apply data after import (compatibility only)'; Widget = 'Checkbox'; Default = 'false' }
+    )
+    Dependencies = @(
+        @{ Id = 'bc-web-client'; VersionQuery = '' }
     )
 }
 

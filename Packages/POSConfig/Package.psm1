@@ -5,26 +5,45 @@ function Install-Package($Context, [switch] $Update) {
 
   $ServerData = Get-ServerInstalled -InstanceDirectory $Context.InstanceDirectory
   $ConnectionInfo = Get-ConnectionInfo -ServerData $ServerData
-  Import-Module LsSetupHelper\BusinessCentral\Management
-  Import-Module (Get-BcModulePath -ServerDir $ServerData.ServerDir -Type Management) -Global
+  try { Import-Module LsSetupHelper\BusinessCentral\Management -ErrorAction Stop } catch { Write-Verbose 'Could not import LsSetupHelper BusinessCentral Management'; }
+  try { Import-Module (Get-BcModulePath -ServerDir $ServerData.ServerDir -Type Management) -Global -ErrorAction Stop } catch { }
 
   $Instance = $Context.InstanceName
   if ($Instance) {
     try {
       # If an instance name can be read
-      Import-Module LsSetupHelper\BusinessCentral\Management
-      Import-Module (Get-BcModulePath -InstanceName $Instance -Type Management) -Global
-      Import-Module (Get-BcModulePath -InstanceName $Instance -Type Apps) -Global
+  try { Import-Module LsSetupHelper\BusinessCentral\Management -ErrorAction Stop } catch { }
+  try { Import-Module (Get-BcModulePath -InstanceName $Instance -Type Management) -Global -ErrorAction Stop } catch { }
+  try { Import-Module (Get-BcModulePath -InstanceName $Instance -Type Apps) -Global -ErrorAction Stop } catch { }
 
       # Track created resources for potential rollback
       $createdResources = @()
 
+      # Resolve parameters with defaults
+      $company = if ($Context.Arguments.Company) { $Context.Arguments.Company } else { $ConnectionInfo.Company }
+      $posUser = if ($Context.Arguments.POSUserName) { $Context.Arguments.POSUserName } else { 'POS' }
+      $posAdminUser = if ($Context.Arguments.POSAdminUserName) { $Context.Arguments.POSAdminUserName } else { 'POSADMIN' }
+      $posPerm = if ($Context.Arguments.POSPermissionSetId) { $Context.Arguments.POSPermissionSetId } else { 'SUPER (DATA)' }
+      $posPermApp = if ($Context.Arguments.POSPermissionSetAppName) { $Context.Arguments.POSPermissionSetAppName } else { 'System Application' }
+      $posPermPublisher = if ($Context.Arguments.POSPermissionSetAppPublisher) { $Context.Arguments.POSPermissionSetAppPublisher } else { 'Microsoft' }
+      $adminPerm = if ($Context.Arguments.POSAdminPermissionSetId) { $Context.Arguments.POSAdminPermissionSetId } else { 'SUPER' }
+      $cuId = if ($Context.Arguments.CodeunitId) { [int]$Context.Arguments.CodeunitId } else { 50101 }
+      $cuMethod = if ($Context.Arguments.MethodName) { $Context.Arguments.MethodName } else { 'SetupPOSEnvironment' }
+
+      # Generate passwords if not provided
+      function New-RandomPassword([int]$length = 16) {
+        $allowed = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@$%&*?'
+        -join (1..$length | ForEach-Object { $allowed[(Get-Random -Max $allowed.Length)] })
+      }
+      $posPwdPlain = if ($Context.Arguments.POSUserPassword) { [string]$Context.Arguments.POSUserPassword } else { New-RandomPassword 14 }
+      $adminPwdPlain = if ($Context.Arguments.POSAdminPassword) { [string]$Context.Arguments.POSAdminPassword } else { New-RandomPassword 18 }
+
       # Create POS user
       try {
-        $existingUser = Get-NAVServerUser -ServerInstance $Instance  | Where-Object { $_.UserName -eq 'POS' } -ErrorAction SilentlyContinue
+        $existingUser = Get-NAVServerUser -ServerInstance $Instance  | Where-Object { $_.UserName -eq $posUser } -ErrorAction SilentlyContinue
         if (-not $existingUser) {
-          New-NAVServerUser -ServerInstance $Instance -UserName "POS" -Password (ConvertTo-SecureString -String 'C0stapos' -AsPlainText -Force) -FullName "POS User" -State Enabled
-          $createdResources += @{ Type = "User"; Name = "POS"; ServerInstance = $Instance }
+          New-NAVServerUser -ServerInstance $Instance -UserName $posUser -Password (ConvertTo-SecureString -String $posPwdPlain -AsPlainText -Force) -FullName "POS User" -State Enabled
+          $createdResources += @{ Type = "User"; Name = $posUser; ServerInstance = $Instance }
           Write-Verbose "Created POS user successfully"
         }
         else {
@@ -37,8 +56,8 @@ function Install-Package($Context, [switch] $Update) {
 
       # Assign permission set to POS user
       try {
-        New-NAVServerUserPermissionSet -PermissionSetId 'SUPER (DATA)' -AppName 'System Application' -AppPublisher Microsoft -ServerInstance $Instance -UserName "POS"
-        $createdResources += @{ Type = "Permission"; Name = "SUPER (DATA)"; User = "POS"; ServerInstance = $Instance }
+        New-NAVServerUserPermissionSet -PermissionSetId $posPerm -AppName $posPermApp -AppPublisher $posPermPublisher -ServerInstance $Instance -UserName $posUser
+        $createdResources += @{ Type = "Permission"; Name = $posPerm; User = $posUser; ServerInstance = $Instance }
         Write-Verbose "Assigned SUPER (DATA) permission to POS user successfully"
       }
       catch {
@@ -47,10 +66,10 @@ function Install-Package($Context, [switch] $Update) {
 
       # Create POSADMIN user
       try {
-        $existingAdmin = Get-NAVServerUser -ServerInstance $Instance | Where-Object { $_.UserName -eq 'POSADMIN' } -ErrorAction SilentlyContinue
+        $existingAdmin = Get-NAVServerUser -ServerInstance $Instance | Where-Object { $_.UserName -eq $posAdminUser } -ErrorAction SilentlyContinue
         if (-not $existingAdmin) {
-          New-NAVServerUser -ServerInstance $Instance -UserName "POSADMIN" -Password (ConvertTo-SecureString -String 'Windows101!' -AsPlainText -Force)  -FullName 'POS Admin' -State Enabled
-          $createdResources += @{ Type = "User"; Name = "POSADMIN"; ServerInstance = $Instance }
+          New-NAVServerUser -ServerInstance $Instance -UserName $posAdminUser -Password (ConvertTo-SecureString -String $adminPwdPlain -AsPlainText -Force)  -FullName 'POS Admin' -State Enabled
+          $createdResources += @{ Type = "User"; Name = $posAdminUser; ServerInstance = $Instance }
           Write-Verbose "Created POSADMIN user successfully"
         }
         else {
@@ -63,8 +82,8 @@ function Install-Package($Context, [switch] $Update) {
 
       # Assign permission set to POSADMIN user
       try {
-        New-NAVServerUserPermissionSet -PermissionSetId "SUPER" -ServerInstance $Instance -UserName "POSADMIN"
-        $createdResources += @{ Type = "Permission"; Name = "SUPER"; User = "POSADMIN"; ServerInstance = $Instance }
+        New-NAVServerUserPermissionSet -PermissionSetId $adminPerm -ServerInstance $Instance -UserName $posAdminUser
+        $createdResources += @{ Type = "Permission"; Name = $adminPerm; User = $posAdminUser; ServerInstance = $Instance }
         Write-Verbose "Assigned SUPER permission to POSADMIN user successfully"
       }
       catch {
@@ -77,7 +96,7 @@ function Install-Package($Context, [switch] $Update) {
         # Only trigger the CU if there is a store no. entered
         $ArgString = $Arg1 + '|' + $Arg2
         try {
-          Invoke-NAVCodeunit -ServerInstance $Instance -Tenant default -Company $ConnectionInfo.Company -CodeunitId 50101 -MethodName SetupPOSEnvironment -Argument $ArgString.ToString()
+          Invoke-NAVCodeunit -ServerInstance $Instance -Tenant default -Company $company -CodeunitId $cuId -MethodName $cuMethod -Argument $ArgString.ToString()
           Write-Verbose "Successfully invoked codeunit for POS setup"
         }
         catch {
@@ -90,7 +109,7 @@ function Install-Package($Context, [switch] $Update) {
       $pos = $Context.Arguments.POSID
       Get-ChildItem -Path $Context.TemporaryDirectory -Filter '*.ps1' -Recurse | ForEach-Object {
         Write-Host "Running payload script: $($_.FullName)"
-        & PowerShell -NoProfile -ExecutionPolicy Bypass -File $_.FullName -StoreNumber $store -POSID $pos
+        & PowerShell -NoProfile -ExecutionPolicy Bypass -File $_.FullName --% -StoreNumber "$store" -POSID "$pos"
       }
     }
     catch {
