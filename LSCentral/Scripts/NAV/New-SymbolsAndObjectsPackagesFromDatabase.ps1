@@ -130,5 +130,5 @@ $Packages += New-AppPackage @Package -Force:$Force | Import-UssPackage -Force:$F
 
 if ($Import)
 {
-    $Packages | Import-UssPackage -Server $Server -Port $Port -Force:$Force
+    $Packages | Import-UssPackage -Server $Server -Force:$Force
 }

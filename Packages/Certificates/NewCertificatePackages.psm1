@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'stop'
 
-Import-Module GoCurrentServer
+try { Import-Module UpdateServiceServer -ErrorAction Stop } catch { }
 Import-Module (Join-Path $PSScriptRoot 'Private\Package.psm1')
 
 function New-CertificatePackage
@@ -109,7 +109,7 @@ function New-CertificatePackage
         Write-Warning "Specified password will be stored in the package and used during installation."
     }
     
-    New-GocsPackage @Package -Force:$Force
+    New-UssPackage @Package -Force:$Force
 }
 
 function Get-Encrypted

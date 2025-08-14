@@ -1,6 +1,6 @@
-# Go Current Examples
+# Update Service Examples
 
-* This repository contains various examples for [Go Current](https://help.gocurrent.lsretail.com).
+* This repository contains various examples for [LS Update Service](https://help.updateservice.lsretail.com).
 * All examples are provided *as is* and might need adjustments before use.
 * Contributions are welcome through pull-requests.
 

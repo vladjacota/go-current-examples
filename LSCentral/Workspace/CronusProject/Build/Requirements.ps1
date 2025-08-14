@@ -14,16 +14,16 @@ $ErrorActionPreference = 'stop'
 $env:PSModulePath = [System.Environment]::GetEnvironmentVariable("PSModulePath","Machine")
 try
 {
-    Import-Module GoCurrent
+    Import-Module UpdateService
 }
 catch
 {
     Invoke-WebRequest -Uri "http://$($Server):$($RestManagementPort)/ManagementFile/install" -UseBasicParsing | % { & ([ScriptBlock]::Create([System.Text.Encoding]::Utf8.GetString($_.Content))) }
-    Import-Module GoCurrent
+    Import-Module UpdateService
 }
 
 $Arguments = @{
-    'go-current-server' = @{
+    'update-service-server' = @{
         'ConnectionString' = ''
     }
 }
@@ -31,15 +31,15 @@ $Arguments = @{
 $Packages = @(
     @{ Id = 'ls-setup-helper'; Version = '^!'}
     @{ Id = 'ls-package-tools'; Version = '^!'}
-    @{ Id = 'go-current-server'; Version = '^!'}
+    @{ Id = 'update-service-server'; Version = '^!'}
 )
 
-if (($Packages | Get-GocUpdates))
+if (($Packages | Get-UscUpdates))
 {
     Write-Host "Installing requirements for build..."
-    $Packages | Install-GocPackage -UpdateStrategy Automatic -Arguments $Arguments
+    $Packages | Install-UscPackage -UpdateStrategy Automatic -Arguments $Arguments
     $env:PSModulePath = [System.Environment]::GetEnvironmentVariable("PSModulePath","Machine")
 }
 
 Write-Host 'Current installed packages:'
-$Packages | Get-GocInstalledPackage | Format-Table -Property 'Id', 'Version' | Out-String | Write-Host
+$Packages | Get-UscInstalledPackage | Format-Table -Property 'Id', 'Version' | Out-String | Write-Host

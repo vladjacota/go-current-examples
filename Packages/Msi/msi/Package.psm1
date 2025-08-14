@@ -51,7 +51,7 @@ function Remove-Msi
     $Arguments = @("/x", $ProductCode)
     $Arguments += $ArgumentList
 
-    Invoke-Msi -LogName 'GoCRemove' -ValidExitCodes $ValidExitCodes -ArgumentList $Arguments
+    Invoke-Msi -LogName 'PackageRemove' -ValidExitCodes $ValidExitCodes -ArgumentList $Arguments
 }
 
 function Invoke-Msi

@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'stop'
 
-Import-Module GoCurrentServer
+try { Import-Module UpdateServiceServer -ErrorAction Stop } catch { }
 Import-Module LsSetupHelper\Release\Version
 
 function New-ServiceTierAdministratorPackageFromWeb
@@ -36,12 +36,12 @@ function New-ServiceTierAdministratorPackageFromWeb
 
     $Version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($Path).ProductVersion.Trim()
 
-    if ($Force -or !(Test-GocsPackage -id 'service-tier-administration' -Version $Version -Server $Server -Port $Port))
+    if ($Force -or !(Test-UssPackage -Id 'service-tier-administration' -Version $Version -Server $Server))
     {
         $Package = New-ServiceTierAdministratorPackage -Path $Path -OutputDir $OutputDir -Force:$Force
         if ($Import)
         {
-            $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+            $Package | Import-UssPackage -Server $Server -Force:$Force
         }
         $Package
     }
@@ -76,5 +76,5 @@ function New-ServiceTierAdministratorPackage
         OutputDir = $OutputDir
     }
     
-    New-GocsPackage @Package -Force:$Force
+    New-UssPackage @Package -Force:$Force
 }

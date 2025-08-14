@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'stop'
 
-Import-Module GoCurrentServer
+try { Import-Module UpdateServiceServer -ErrorAction Stop } catch { }
 
 function New-SqlStudioPackageFromWeb
 {
@@ -23,9 +23,9 @@ function New-SqlStudioPackageFromWeb
 
     $Version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($Path).ProductVersion.Trim()
    
-    if ($Force -or !(Test-GocsPackage -Id 'sql-management-studio' -Version $Version -Server $Server -Port $Port))
+    if ($Force -or !(Test-UssPackage -Id 'sql-management-studio' -Version $Version -Server $Server))
     {
         $Script = (Join-Path $PSScriptRoot '..\..\Sql\NewSqlStudioManagementPackage.ps1')
-        & $Script -SetupPath $Path -OutputDir $OutputDir -Force:$Force -Import:$Import -Server $Server -Port $Port
+    & $Script -SetupPath $Path -OutputDir $OutputDir -Force:$Force -Import:$Import -Server $Server
     }
 }

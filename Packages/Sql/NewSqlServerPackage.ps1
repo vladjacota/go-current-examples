@@ -85,9 +85,9 @@ $SqlPackage = @{
     }
 }
 
-$Package = New-GocsPackage @SqlPackage -Force:$Force
+$Package = New-UssPackage @SqlPackage -Force:$Force
 if ($Import)
 {
-    $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+    $Package | Import-UssPackage -Server $Server -Force:$Force
 }
 $Package

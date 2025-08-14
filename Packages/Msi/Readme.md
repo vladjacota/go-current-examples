@@ -8,7 +8,7 @@ Import-Module (Join-Path $PSScriptRoot 'MsiPackage.psm1')
 New-MsiPackage -PackageId 'msi-package' -PackageName 'Msi Package' -SetupPath 'c:\path\to\msi\setup.msi' -OutputDir 'c:\path\to\package\output\dir' -Force
 ```
 
-This example shows the generic use of the cmdlet, this will create a new package called *msi-package* and is imported into a Go Current server installed on the same machine. To import to a server on a different machine use the *-Server* and *-Port* parameters.
+This example shows the generic use of the cmdlet. It will create a new package called *msi-package* and import it into an Update Service server installed on the same machine. To import to a server on a different machine use the *-Server* parameter (full URL is supported).
 
 ```powershell
 Import-Module (Join-Path $PSScriptRoot 'MsiPackage.psm1')

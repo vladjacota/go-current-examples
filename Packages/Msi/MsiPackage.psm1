@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
-Import-Module GoCurrentServer
+try { Import-Module UpdateServiceServer -ErrorAction Stop } catch { }
 Import-Module (Join-Path $PSScriptRoot 'msi\Package.psm1')
 
 function New-MsiPackage
@@ -48,7 +48,7 @@ function New-MsiPackage
             @{ Description = "Product Code"; Key = "ProductCode"; DefaultValue = $MsiInfo.ProductCode; Hidden = $true}
         )
     }
-    New-GocsPackage @Package -Force:$Force
+    New-UssPackage @Package -Force:$Force
 }
 
 function Get-MsiInfo()

@@ -1,12 +1,12 @@
 $ErrorActionPreference = 'stop'
 
-Import-Module GoCurrentServer
+try { Import-Module UpdateServiceServer -ErrorAction Stop } catch { }
 
 function New-ToshibaUposPackage
 {
     <#
         .SYNOPSIS
-            Creates a new GoC package for Toshiba Upos.
+            Creates a new Update Service package for Toshiba Upos.
 
         .PARAMETER SetupDir
             Setup directory containing Toshiba Upos setup file, including ISS file.
@@ -41,5 +41,5 @@ function New-ToshibaUposPackage
         }
     }
 
-    New-GocsPackage @Package -Force
+    New-UssPackage @Package -Force
 }

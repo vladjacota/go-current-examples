@@ -1,6 +1,6 @@
 # LS Central examples
 
-This directory contains Go Current examples for LS Central.
+This directory contains Update Service examples for LS Central.
 
 ## Content
 

@@ -13,7 +13,7 @@ param(
 
 $ErrorActionPreference = 'stop'
 
-Import-Module GoCurrent
+Import-Module UpdateService
 
 Import-Module LsPackageTools\Workspace
 
@@ -44,5 +44,5 @@ $Packages = @(
     @{ Id = 'bc-cronus-license'; VersionQuery = ''}
 )
 
-$Packages | Get-GocUpdates -InstanceName 'CronusDev'
-$Packages | Install-GocPackage -InstanceName 'CronusDev' -UpdateStrategy 'Manual' -Arguments $Arguments
+$Packages | Get-UscUpdates -InstanceName 'CronusDev'
+$Packages | Install-UscPackage -InstanceName 'CronusDev' -UpdateStrategy 'Manual' -Arguments $Arguments
