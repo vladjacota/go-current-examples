@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'stop'
 
-Import-Module GoCurrentServer
+try { Import-Module UpdateServiceServer -ErrorAction Stop } catch { }
 Import-Module (Join-Path $PSScriptRoot '..\..\Msi\MsiPackage.psm1')
 
 function New-TortoiseGitPackageFromWeb
@@ -30,7 +30,7 @@ function New-TortoiseGitPackageFromWeb
         $Match = [Regex]::new('\d+\.\d+\.\d+\.\d+').Match($Url)
         if ($Match.Success)
         {
-            if ($Force -or !(Test-GocsPackage -Id $PackageId -Version $Match.Value -Server $Server -Port $Port))
+            if ($Force -or !(Test-UssPackage -Id $PackageId -Version $Match.Value -Server $Server))
             {
                 [System.IO.Directory]::CreateDirectory($OutputDir) | Out-Null
                 $OutputFilePath = Join-Path $OutputDir 'TortoiseGit.msi'
@@ -40,7 +40,7 @@ function New-TortoiseGitPackageFromWeb
 
                 if ($Import)
                 {
-                    $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+                    $Package | Import-UssPackage -Server $Server -Force:$Force
                 }
                 $Package
             }

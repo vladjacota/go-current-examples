@@ -15,14 +15,14 @@ Import-Module (Join-Path $PSScriptRoot 'Chrome\NewPackage.ps1') -Force
 
 [System.IO.Directory]::CreateDirectory($OutputDir) | Out-Null
 
-New-VsCodePackageFromWeb -OutputDir $OutputDir -Import:$Import -Server $Server -Port $Port -Force:$Force
+New-VsCodePackageFromWeb -OutputDir $OutputDir -Import:$Import -Server $Server -Force:$Force
 
-New-GitPackageFromWeb -Server $Server -Port $Port -OutputDir $OutputDir -Import:$Import -Force:$Force
+New-GitPackageFromWeb -Server $Server -OutputDir $OutputDir -Import:$Import -Force:$Force
 
-New-TortoiseGitPackageFromWeb -Server $Server -Port $Port -OutputDir $OutputDir -Import:$Import -Force:$Force
+New-TortoiseGitPackageFromWeb -Server $Server -OutputDir $OutputDir -Import:$Import -Force:$Force
 
-New-SqlStudioPackageFromWeb -OutputDir $OutputDir -Import:$Import -Server $Server -Port $Port -Force:$Force
+New-SqlStudioPackageFromWeb -OutputDir $OutputDir -Import:$Import -Server $Server -Force:$Force
 
-New-ServiceTierAdministratorPackageFromWeb -OutputDir $OutputDir -Import:$Import -Server $Server -Port $Port -Force:$Force
+New-ServiceTierAdministratorPackageFromWeb -OutputDir $OutputDir -Import:$Import -Server $Server -Force:$Force
 
-New-ChromePackageFromWeb -OutputDir $OutputDir -Import:$Import -Server $Server -Port $Port -Force:$Force
+New-ChromePackageFromWeb -OutputDir $OutputDir -Import:$Import -Server $Server -Force:$Force

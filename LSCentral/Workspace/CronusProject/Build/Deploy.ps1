@@ -5,7 +5,7 @@ param(
     [switch] $Force
 )
 $ErrorActionPreference = 'stop'
-Import-Module GoCurrentServer
+Import-Module UpdateServiceServer
 
 $PackagesDir = Join-Path $PSScriptRoot "..\Packages\$Target"
 
@@ -14,4 +14,4 @@ if (!(Test-Path $PackagesDir))
     throw "No packages do deploy."
 }
 
-Import-GocsPackage -Path (Join-Path $PackagesDir '*') -Server $Server -Port $Port -Force:$Force
+Import-UssPackage -Path (Join-Path $PackagesDir '*') -Server $Server -Force:$Force

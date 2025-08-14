@@ -1,12 +1,12 @@
 $ErrorActionPreference = 'stop'
 
-Import-Module GoCurrentServer
+try { Import-Module UpdateServiceServer -ErrorAction Stop } catch { }
 
 function New-EpsonOposAdkPackage
 {
     <#
         .SYNOPSIS
-            Create a new GoC package for Epson OPOS ADK.
+            Create a new Update Service package for Epson OPOS ADK.
 
         .PARAMETER SetupDir
             Setup directory containing Epson OPOS ADK setup file, including setup.iss and OposData.reg files.
@@ -40,5 +40,5 @@ function New-EpsonOposAdkPackage
         }
     }
 
-    New-GocsPackage @Package -Force
+    New-UssPackage @Package -Force
 }

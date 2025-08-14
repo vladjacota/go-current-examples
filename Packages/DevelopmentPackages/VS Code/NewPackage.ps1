@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'stop'
 
-Import-Module GoCurrentServer
+try { Import-Module UpdateServiceServer -ErrorAction Stop } catch { }
 
 function New-VsCodePackage
 {
@@ -35,7 +35,7 @@ function New-VsCodePackage
         OutputDir = $OutputDir
     }
     
-    New-GocsPackage @Package -Force:$Force
+    New-UssPackage @Package -Force:$Force
 }
 
 function New-VsCodePackageFromWeb
@@ -60,12 +60,12 @@ function New-VsCodePackageFromWeb
 
     $Version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($Path).ProductVersion.Trim()
     
-    if ($Force -or !(Test-GocsPackage -id 'vs-code' -Version $Version -Server $Server -Port $Port))
+    if ($Force -or !(Test-UssPackage -Id 'vs-code' -Version $Version -Server $Server))
     {
         $Package = New-VsCodePackage -Path $Path -OutputDir $OutputDir -Force:$Force
         if ($Import)
         {
-            $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+            $Package | Import-UssPackage -Server $Server -Force:$Force
         }
         $Package
     }

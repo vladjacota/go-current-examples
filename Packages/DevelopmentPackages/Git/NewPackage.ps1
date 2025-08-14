@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'stop'
 
-Import-Module GoCurrentServer
+try { Import-Module UpdateServiceServer -ErrorAction Stop } catch { }
 
 function New-GitPackage
 {
@@ -31,7 +31,7 @@ function New-GitPackage
         OutputDir = $OutputDir
     }
     
-    New-GocsPackage @Package -Force:$Force
+    New-UssPackage @Package -Force:$Force
 }
 
 function New-GitPackageFromWeb
@@ -62,7 +62,7 @@ function New-GitPackageFromWeb
         $Match = [Regex]::new('\d+\.\d+\.\d+(\.\d+)?').Match($Url)
         if ($Match.Success)
         {
-            if ($Force -or !(Test-GocsPackage -Id $PackageId -Version $Match.Value -Server $Server -Port $Port))
+            if ($Force -or !(Test-UssPackage -Id $PackageId -Version $Match.Value -Server $Server))
             {
                 [System.IO.Directory]::CreateDirectory($OutputDir) | Out-Null
                 $OutputFilePath = Join-Path $OutputDir 'Git.exe'
@@ -70,7 +70,7 @@ function New-GitPackageFromWeb
                 $Package = New-GitPackage -Path $OutputFilePath -OutputDir $OutputDir -Force:$Force
                 if ($Import)
                 {
-                    $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+                    $Package | Import-UssPackage -Server $Server -Force:$Force
                 }
                 $Package
             }

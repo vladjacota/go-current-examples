@@ -1,4 +1,4 @@
-$ErrorActionPreference  = 'stop'
+$ErrorActionPreference = 'stop'
 
 function New-CaffeinePackageFromWeb
 {
@@ -36,12 +36,12 @@ function New-CaffeinePackageFromWeb
         $Version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($Path).FileVersionRaw.ToString()
         $Version = Format-Version -Version $Version -Places 3
     
-        if ($Force -or !(Test-GocsPackage -id 'caffeine' -Version $Version -Server $Server -Port $Port))
+    if ($Force -or !(Test-UssPackage -Id 'caffeine' -Version $Version -Server $Server))
         {
             $Package = New-CaffeinePackage -Path $Path -OutputDir $OutputDir -Force:$Force
             if ($Import)
             {
-                $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+                $Package | Import-UssPackage -Server $Server -Force:$Force
             }
             $Package
         }
@@ -84,5 +84,5 @@ function New-CaffeinePackage
         OutputDir = $OutputDir
     }
     
-    New-GocsPackage @Package -Force:$Force
+    New-UssPackage @Package -Force:$Force
 }

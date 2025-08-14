@@ -33,9 +33,9 @@ $Management = @{
     Instance = $false
 }
 
-$Package = New-GocsPackage @Management -Force:$Force 
+$Package = New-UssPackage @Management -Force:$Force 
 if ($Import)
 {
-    $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+    $Package | Import-UssPackage -Server $Server -Force:$Force
 }
 $Package

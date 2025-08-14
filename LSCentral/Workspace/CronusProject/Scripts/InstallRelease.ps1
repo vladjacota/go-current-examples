@@ -7,7 +7,7 @@
         of LS Central.
 #>
 $ErrorActionPreference = 'stop'
-Import-Module GoCurrent
+Import-Module UpdateService
 $Arguments = @{
     'bc-server' = @{
         AllowForceSync = 'true'
@@ -31,5 +31,5 @@ $Packages = @(
     @{ Id = 'bc-cronus-license'; VersionQuery = ''}
 )
 
-$Packages | Get-GocUpdates -InstanceName 'Cronus'
-$Packages | Install-GocPackage -InstanceName 'Cronus' -UpdateStrategy 'Manual' -Arguments $Arguments
+$Packages | Get-UscUpdates -InstanceName 'Cronus'
+$Packages | Install-UscPackage -InstanceName 'Cronus' -UpdateStrategy 'Manual' -Arguments $Arguments

@@ -47,7 +47,7 @@ $Package = New-CertificatePackage @Arguments -Force:$Force
 $Package
 if ($Import)
 {
-    $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+    $Package | Import-UssPackage -Server $Server -Force:$Force
 }
 
 # New private certificate package.
@@ -64,5 +64,5 @@ $Arguments = @{
 $Package = New-CertificatePackage @Arguments -Force:$Force
 if ($Import)
 {
-    $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+    $Package | Import-UssPackage -Server $Server -Force:$Force
 }

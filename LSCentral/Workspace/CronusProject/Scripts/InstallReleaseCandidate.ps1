@@ -7,7 +7,7 @@
         apps on top of LS Central.
 #>
 $ErrorActionPreference = 'stop'
-Import-Module GoCurrent
+Import-Module UpdateService
 $Arguments = @{
     'bc-server' = @{
         AllowForceSync = 'true'
@@ -31,5 +31,5 @@ $Packages = @(
     @{ Id = 'bc-cronus-license'; VersionQuery = ''}
 )
 
-$Packages | Get-GocUpdates -InstanceName 'CronusRC'
-$Packages | Install-GocPackage -InstanceName 'CronusRC' -UpdateStrategy 'Manual' -Arguments $Arguments
+$Packages | Get-UscUpdates -InstanceName 'CronusRC'
+$Packages | Install-UscPackage -InstanceName 'CronusRC' -UpdateStrategy 'Manual' -Arguments $Arguments

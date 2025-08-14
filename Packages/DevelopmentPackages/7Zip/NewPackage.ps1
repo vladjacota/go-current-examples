@@ -24,12 +24,12 @@ function New-7ZipPackageFromWeb
     $Version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($Path).ProductVersion.Trim()
     $Version = Format-Version -Version $Version -Places 3
     
-    if ($Force -or !(Test-GocsPackage -id '7-zip' -Version $Version -Server $Server -Port $Port))
+    if ($Force -or !(Test-UssPackage -Id '7-zip' -Version $Version -Server $Server))
     {
         $Package = New-7ZipPackage -Path $Path -OutputDir $OutputDir -Force:$Force
         if ($Import)
         {
-            $Package | Import-GocsPackage -Server $Server -Port $Port -Force:$Force
+            $Package | Import-UssPackage -Server $Server -Force:$Force
         }
         $Package
     }
@@ -67,5 +67,5 @@ function New-7ZipPackage
         OutputDir = $OutputDir
     }
     
-    New-GocsPackage @Package -Force:$Force
+    New-UssPackage @Package -Force:$Force
 }
