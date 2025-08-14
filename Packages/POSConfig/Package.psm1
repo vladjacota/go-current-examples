@@ -1,0 +1,199 @@
+$ErrorActionPreference = 'stop'
+
+function Install-Package($Context, [switch] $Update) {
+  Write-Progress -Id 217 -Activity $Context.Name -Status "Initializing..." -PercentComplete 5
+
+  $ServerData = Get-ServerInstalled -InstanceDirectory $Context.InstanceDirectory
+  $ConnectionInfo = Get-ConnectionInfo -ServerData $ServerData
+  Import-Module LsSetupHelper\BusinessCentral\Management
+  Import-Module (Get-BcModulePath -ServerDir $ServerData.ServerDir -Type Management) -Global
+
+  $Instance = $Context.InstanceName
+  if ($Instance) {
+    try {
+      # If an instance name can be read
+      Import-Module LsSetupHelper\BusinessCentral\Management
+      Import-Module (Get-BcModulePath -InstanceName $Instance -Type Management) -Global
+      Import-Module (Get-BcModulePath -InstanceName $Instance -Type Apps) -Global
+
+      # Track created resources for potential rollback
+      $createdResources = @()
+
+      # Create POS user
+      try {
+        $existingUser = Get-NAVServerUser -ServerInstance $Instance  | Where-Object { $_.UserName -eq 'POS' } -ErrorAction SilentlyContinue
+        if (-not $existingUser) {
+          New-NAVServerUser -ServerInstance $Instance -UserName "POS" -Password (ConvertTo-SecureString -String 'C0stapos' -AsPlainText -Force) -FullName "POS User" -State Enabled
+          $createdResources += @{ Type = "User"; Name = "POS"; ServerInstance = $Instance }
+          Write-Verbose "Created POS user successfully"
+        }
+        else {
+          Write-Verbose "POS user already exists, skipping creation"
+        }
+      }
+      catch {
+        throw "Failed to create POS user: $_"
+      }
+
+      # Assign permission set to POS user
+      try {
+        New-NAVServerUserPermissionSet -PermissionSetId 'SUPER (DATA)' -AppName 'System Application' -AppPublisher Microsoft -ServerInstance $Instance -UserName "POS"
+        $createdResources += @{ Type = "Permission"; Name = "SUPER (DATA)"; User = "POS"; ServerInstance = $Instance }
+        Write-Verbose "Assigned SUPER (DATA) permission to POS user successfully"
+      }
+      catch {
+        throw "Failed to assign permission set to POS user: $_"
+      }
+
+      # Create POSADMIN user
+      try {
+        $existingAdmin = Get-NAVServerUser -ServerInstance $Instance | Where-Object { $_.UserName -eq 'POSADMIN' } -ErrorAction SilentlyContinue
+        if (-not $existingAdmin) {
+          New-NAVServerUser -ServerInstance $Instance -UserName "POSADMIN" -Password (ConvertTo-SecureString -String 'Windows101!' -AsPlainText -Force)  -FullName 'POS Admin' -State Enabled
+          $createdResources += @{ Type = "User"; Name = "POSADMIN"; ServerInstance = $Instance }
+          Write-Verbose "Created POSADMIN user successfully"
+        }
+        else {
+          Write-Verbose "POSADMIN user already exists, skipping creation"
+        }
+      }
+      catch {
+        throw "Failed to create POSADMIN user: $_"
+      }
+
+      # Assign permission set to POSADMIN user
+      try {
+        New-NAVServerUserPermissionSet -PermissionSetId "SUPER" -ServerInstance $Instance -UserName "POSADMIN"
+        $createdResources += @{ Type = "Permission"; Name = "SUPER"; User = "POSADMIN"; ServerInstance = $Instance }
+        Write-Verbose "Assigned SUPER permission to POSADMIN user successfully"
+      }
+      catch {
+        throw "Failed to assign permission set to POSADMIN user: $_"
+      }
+
+      $Arg1 = $Context.Arguments.StoreNumber
+      $Arg2 = $Context.Arguments.POSID
+      if ($Arg1) {
+        # Only trigger the CU if there is a store no. entered
+        $ArgString = $Arg1 + '|' + $Arg2
+        try {
+          Invoke-NAVCodeunit -ServerInstance $Instance -Tenant default -Company $ConnectionInfo.Company -CodeunitId 50101 -MethodName SetupPOSEnvironment -Argument $ArgString.ToString()
+          Write-Verbose "Successfully invoked codeunit for POS setup"
+        }
+        catch {
+          throw "Failed to invoke codeunit: $_"
+        }
+      }
+
+      # Also run any payload scripts shipped inside the package with the same arguments
+      $store = $Context.Arguments.StoreNumber
+      $pos = $Context.Arguments.POSID
+      Get-ChildItem -Path $Context.TemporaryDirectory -Filter '*.ps1' -Recurse | ForEach-Object {
+        Write-Host "Running payload script: $($_.FullName)"
+        & PowerShell -NoProfile -ExecutionPolicy Bypass -File $_.FullName -StoreNumber $store -POSID $pos
+      }
+    }
+    catch {
+      Write-Error "Error during installation: $_"
+
+      # Perform rollback of created resources in reverse order
+      for ($i = $createdResources.Count - 1; $i -ge 0; $i--) {
+        $resource = $createdResources[$i]
+        try {
+          if ($resource.Type -eq "User") {
+            Write-Warning "Rolling back: Removing user $($resource.Name)"
+            Remove-NAVServerUser -ServerInstance $resource.ServerInstance -UserName $resource.Name -Force -ErrorAction SilentlyContinue
+          }
+          elseif ($resource.Type -eq "Permission") {
+            Write-Warning "Rolling back: Removing permission $($resource.Name) from user $($resource.User)"
+            Remove-NAVServerUserPermissionSet -ServerInstance $resource.ServerInstance -PermissionSetId $resource.Name -UserName $resource.User -Force -ErrorAction SilentlyContinue
+          }
+        }
+        catch {
+          Write-Warning "Failed to roll back $($resource.Type) $($resource.Name): $_"
+        }
+      }
+
+      # Re-throw the exception
+      throw "Installation failed with rollback: $_"
+    }
+  }
+  else {
+    throw "Error: Instance name was provided but Context.InstanceName is null or empty. Please verify the instance configuration."
+  }
+}
+
+function Update-Package($Context) {
+  Install-Package -Context $Context -Update
+}
+
+function Invoke-CustomCodeunit {
+  param(
+    [string] $ServerInstance,
+    [string] $CompanyName,
+    $CodeunitId,
+    $MethodName
+  )
+
+  $Arguments = @{
+    CodeunitId     = $CodeunitId
+    ServerInstance = $ServerInstance
+    CompanyName    = $CompanyName
+  }
+
+  if ($MethodName) {
+    $Arguments.MethodName = $MethodName
+  }
+
+  if ($MethodName) {
+    Write-Host "Invoking codeunit $CodeunitId with method $MethodName."
+  }
+  else {
+    Write-Host "Invoking codeunit $CodeunitId without method."
+  }
+
+  Invoke-NAVCodeunit @Arguments
+}
+
+function Get-Company {
+  param(
+    [Parameter(Mandatory)]
+    $ConnectionString
+  )
+
+  Import-Module LsSetupHelper\Sql\Utils
+
+  $Entries = Invoke-SqlcmdEx -Query "select Top 1 Name from dbo.Company" -ConnectionString $ConnectionString
+  $Entry = $Entries | Select-Object -First 1
+  if (!$Entry) {
+    return ''
+  }
+  return $Entry.Name
+}
+
+function Get-ConnectionInfo {
+  param(
+    $ServerData
+  )
+
+  $DbServerInstance = $ServerData.ServerConfig.DatabaseServer
+  if ($ServerData.ServerConfig.DatabaseInstance) {
+    $DbServerInstance += "\$($ServerData.ServerConfig.DatabaseInstance)"
+  }
+
+  $CompanyName = (Get-Company -ConnectionString $ServerData.ConnectionString)
+  return @{
+    DbServerInstance  = $DbServerInstance
+    DatabaseName      = $ServerData.ServerConfig.DatabaseName
+    Company           = $CompanyName
+    CompanyNormalized = $CompanyName.Replace('.', '_')
+  }
+}
+
+function Get-ServerInstalled {
+  param(
+    [Parameter(Mandatory = $true)]
+    $InstanceDirectory
+  )
+  return Get-Content -Path (Join-Path $InstanceDirectory 'bc-server.json') -Raw | ConvertFrom-Json
+}
